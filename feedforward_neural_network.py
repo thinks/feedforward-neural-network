@@ -114,7 +114,8 @@ def vectorize_label(label):
     
 class Network(object):
     """
-    TODO!
+    Implementation of a multilayer perceptron. Stores the weights between layers. Enables both
+    training and evaluation through the update and feedforward functions, respectively.
     """
     def __init__(self, 
                  sizes, 
@@ -151,7 +152,9 @@ class Network(object):
 
     def feedforward(self, x):
         """
-        TODO!
+        Compute the values at the output layer for the current weight configuration given input
+        values for all nodes at the input layer, x. Stores all intermediate values in member
+        arrays so that this function can be followed effectively by a backpropagate if desired.
         """
 
         # Store the output of the input layer simply as the example data.
@@ -181,7 +184,8 @@ class Network(object):
 
     def update(self, batch, eta):
         """
-        TODO!
+        Takes in a batch of samples and a learning rate (eta). Compute and sum weight
+        gradients for all samples in the batch and then update the weights using the learning rate.
         """
 
         # Extract image data from batch.
@@ -189,12 +193,12 @@ class Network(object):
         y_target = [batch[i][1] for i in range(len(batch))]
         sum_grad_w = [np.zeros(w.shape) for w in self.w]
         for i in range(len(x)):
-            # The output layer is already stored in self.y[-1] so we don't 
-            # need to store the return value here.
+            # The output layer is already stored in self.y[-1] so we don't need to store the
+            # return value here.
             self.feedforward(x[i])
             
             # Compute and accumulate error gradients.
-            grad_w = self.backpropagate(y_target[i])
+            grad_w = self._backpropagate(y_target[i])
             for j in range(len(grad_w)):
                 sum_grad_w[j] += grad_w[j]
             
@@ -202,34 +206,30 @@ class Network(object):
         for i in range(len(self.w)):
             self.w[i] = np.subtract(self.w[i], np.multiply(eta, sum_grad_w[i]))
 
-    def backpropagate(self, t):
+    def _backpropagate(self, t):
         """
-        TODO!
+        Compute the weight gradients based on the intermediate values from the latest call to
+        feedforward.
         """
         
-        # Compute deltas for the output layer. These deltas 
-        # become input to the hidden layers.
+        # Compute deltas for the output layer. These deltas become input to the hidden layers.
         # Assumes activation function in the output layer is softmax or sigmoid.
         delta = np.subtract(self.y[-1], t)            
 
         # Compute deltas and gradients for hidden layers.
         grad = [np.zeros(w.shape) for w in self.w]
         for i in range(len(self.w) - 1, 0, -1):
-            # Compute the gradients for this weight layer using 
-            # deltas from previous layer.
+            # Compute the gradients for this weight layer using deltas from previous layer.
             grad[i] = np.dot(delta, np.transpose(self.y[i]))
             
-            # Compute deltas for this layer using deltas from 
-            # the layer directly above.      
-            # Compute the activation function and its derivate
-            # for the inputs to this layer.
+            # Compute deltas for this layer using deltas from the layer directly above.
+            # Compute the activation function and its derivate for the inputs to this layer.
             dy_dz = self.activation_func_derivative(self.z[i])
             h_sums = np.dot(np.transpose(delta), self.w[i])
             np.resize(delta, (dy_dz.shape[0] * h_sums.shape[0], 1))
             delta = np.multiply(dy_dz, np.transpose(h_sums))
         
-        # Compute gradients for input layer (using deltas from 
-        # first hidden layer).
+        # Compute gradients for input layer (using deltas from first hidden layer).
         grad[0] = np.dot(delta, np.transpose(self.y[0]))
         
         return grad
@@ -316,7 +316,8 @@ def relu_initial_weights(n_out, n_in):
 
 def train_network(net, data, epoch_count, batch_size, eta, error_rate_func=None):
     """
-    TODO!
+    Train the provided network using the provided data, number of epochs, batch size, and
+    learning rate. Reports the error rate between each epoch.
 
     Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
@@ -414,7 +415,7 @@ if __name__ == "__main__":
                       use_softmax=USE_SOFTMAX)
     train_network(network,
                   training_data, 
-                  n_epochs=EPOCH_COUNT,
+                  epoch_count=EPOCH_COUNT,
                   batch_size=BATCH_SIZE,
                   eta=LEARNING_RATE,
                   error_rate_func=lambda n: get_error_rate(n, test_data))
