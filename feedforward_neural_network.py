@@ -181,7 +181,7 @@ class Network(object):
             self.feedforward(x[i])
             
             # Compute and accumulate error gradients.
-            grad_w = self.backpropagate(x, y_target[i])
+            grad_w = self.backpropagate(y_target[i])
             for j in range(len(grad_w)):
                 sum_grad_w[j] += grad_w[j]
             
@@ -189,7 +189,7 @@ class Network(object):
         for i in range(len(self.w)):
             self.w[i] = np.subtract(self.w[i], np.multiply(eta, sum_grad_w[i]))
 
-    def backpropagate(self, x, t):
+    def backpropagate(self, t):
         """
         TODO!
         """
@@ -223,12 +223,18 @@ class Network(object):
 
         
 def sigmoid(z):
-    """ z should be a column or row vector. """
+    """
+    z should be a column or row vector.
+    """
+
     return np.divide(1.0, np.add(1.0, np.exp(np.multiply(-1.0, z))))
     
     
 def sigmoid_derivative(z):
-    """ z should be a column or row vector. """
+    """
+    z should be a column or row vector.
+    """
+
     s = sigmoid(z)
     return np.multiply(s, np.subtract(1.0, s))
     
@@ -241,8 +247,8 @@ def sigmoid_initial_weights(n_out, n_in):
     function.    
     """
     
-    return np.random.uniform(low=-4 * np.sqrt(6.0 / (n_in + n_out)),
-                             high=4 * np.sqrt(6.0 / (n_in + n_out)),
+    return np.random.uniform(low=-4 * np.sqrt(6.0 / (n_in + n_out))[0],
+                             high=4 * np.sqrt(6.0 / (n_in + n_out))[0],
                              size=(n_out, n_in))
   
     
@@ -267,8 +273,8 @@ def tanh_initial_weights(n_out, n_in):
     """
     Initial weights for tanh activation function.
     """
-    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out)),
-                             high=np.sqrt(6.0 / (n_in + n_out)),
+    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out))[0],
+                             high=np.sqrt(6.0 / (n_in + n_out))[0],
                              size=(n_out, n_in))
 
 
@@ -290,8 +296,8 @@ def relu_initial_weights(n_out, n_in):
     """
     TODO!
     """
-    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out)),
-                             high=np.sqrt(6.0 / (n_in + n_out)),
+    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out))[0],
+                             high=np.sqrt(6.0 / (n_in + n_out))[0],
                              size=(n_out, n_in))
     
 
@@ -312,17 +318,17 @@ def train_network(network, data, n_epochs, batch_size, eta, error_rate_func=None
             print("Epoch %02d, error rate = %.2f" % (e, error_rate * 100))
             
     
-def get_error_rate(network, test_data):
+def get_error_rate(network, error_data):
     """
     Returns a value in the range [0, 1], where zero corresponds to the network
-    predicting the correct value for every instance in test_data and one
+    predicting the correct value for every instance in test_data, and one
     corresponds to the network predicting the incorrect value for every 
     instance in test_data.
     """
     
-    assert len(test_data) > 0
+    assert len(error_data) > 0
     error_count = 0.0
-    for image, label in test_data:    
+    for image, label in error_data:
         y_hat = network.feedforward(image)
         if np.argmax(y_hat, axis=0) != np.argmax(label, axis=0):
             error_count += 1.0
@@ -395,4 +401,4 @@ if __name__ == "__main__":
                   n_epochs=EPOCH_COUNT,
                   batch_size=BATCH_SIZE,
                   eta=LEARNING_RATE,
-                  evaluate=lambda n: get_error_rate(n, test_data))    
+                  error_rate_func=lambda n: get_error_rate(n, test_data))
