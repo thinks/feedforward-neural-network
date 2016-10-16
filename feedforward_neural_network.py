@@ -2,7 +2,10 @@
 """
 Feedforward neural network.
 
-TODO!
+A simple feedforward network implemented using numpy. Trained and tested on the MNIST
+data set consisting of images of hand-written digits.
+
+Based on skeleton code provided by Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
 """
 
 import gzip
@@ -14,14 +17,16 @@ def read_image_and_label_data(image_archive_filename,
                               label_archive_filename,
                               max_pairs=None):
     """
-    Reads image and label data. This returns a list of pairs "(x, y)" where
-    "x" is a 785-dimensional vector (a "numpy.ndarray") representing
-    the image and "y" is a 10-dimensional one-hot vector (a "numpy.ndarray") 
+    Reads image and label data. This returns a list of pairs (x, y) where
+    x is a 785-dimensional vector (a numpy.ndarray) representing
+    the image and y is a 10-dimensional one-hot vector (a numpy.ndarray)
     representing the label.
     
     If max_pairs is None or less than one, reads all the images and labels in 
     the archives. Otherwise reads max_pairs number of images and labels 
     (or all available pairs).
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     
     with gzip.open(image_archive_filename) as img_file, \
@@ -37,6 +42,8 @@ def read_images(input_stream, max_images=None):
 
     If max_images is None or less than one, reads all images from the input 
     source. Otherwise reads max_images number of images (or all available images).
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     
     magic = struct.unpack('>BBBB', input_stream.read(4))
@@ -59,6 +66,8 @@ def read_labels(input_stream, max_labels=None):
 
     If max_labels is None or less than one, reads all labels from the input 
     source. Otherwise reads max_labels number of labels (or all available labels).
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     
     magic = struct.unpack('>BBBB', input_stream.read(4))
@@ -74,12 +83,14 @@ def read_labels(input_stream, max_labels=None):
 
 def vectorize_image(image):
     """
-    Maps an MNIST image to a vector (a "numpy.ndarray"). An MNIST image
+    Maps an MNIST image to a vector (a numpy.ndarray). An MNIST image
     is a 784-component tuple of integers between 0 and 255,
     representing greyscale values. The resulting vector is a
     785-dimensional column vector: The first component of the vector
     is 1; the remaining 784 components represent the greyscale
     values. Each greyscale value is normalized to the interval [0, 1].
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     
     image = (255,) + image  # First component will become 1.
@@ -92,6 +103,8 @@ def vectorize_label(label):
     is an integer "i" between 0 and 9. The resulting vector is a
     10-dimensional column vector with a 1.0 in the "i"th position and
     zeros elsewhere.
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     
     x = np.zeros((10, 1))
@@ -113,7 +126,7 @@ class Network(object):
         Constructor.
         Create and initialize weights, setup structures for storing 
         intermediate values while doing feedforward. These values are re-used
-        when back propagating.
+        when backpropagating.
         """
         
         self.sizes = sizes
@@ -301,24 +314,26 @@ def relu_initial_weights(n_out, n_in):
                              size=(n_out, n_in))
     
 
-def train_network(network, data, n_epochs, batch_size, eta, error_rate_func=None):
+def train_network(net, data, epoch_count, batch_size, eta, error_rate_func=None):
     """
     TODO!
+
+    Function courtesy of Marco Kuhlmann (http://www.ida.liu.se/~marku61/)
     """
     n = len(data)
-    for e in range(n_epochs):
+    for e in range(epoch_count):
         np.random.shuffle(data)
         for k in range(0, n, batch_size):
             mini_batch = data[k:k+batch_size]
-            network.update(mini_batch, eta)
+            net.update(mini_batch, eta)
             print("\rEpoch %02d, %05d instances" % (e, k + batch_size), end="")
         print()
         if error_rate_func:
-            error_rate = error_rate_func(network)
+            error_rate = error_rate_func(net)
             print("Epoch %02d, error rate = %.2f" % (e, error_rate * 100))
             
     
-def get_error_rate(network, error_data):
+def get_error_rate(net, error_data):
     """
     Returns a value in the range [0, 1], where zero corresponds to the network
     predicting the correct value for every instance in test_data, and one
@@ -329,7 +344,7 @@ def get_error_rate(network, error_data):
     assert len(error_data) > 0
     error_count = 0.0
     for image, label in error_data:
-        y_hat = network.feedforward(image)
+        y_hat = net.feedforward(image)
         if np.argmax(y_hat, axis=0) != np.argmax(label, axis=0):
             error_count += 1.0
     
@@ -339,8 +354,9 @@ def get_error_rate(network, error_data):
 def network_sizes(input_layer_size, output_layer_size, hidden_layer_sizes):
     """
     Return a list in the format:
-    [input_layer_size, hidden_layer_size[0], hidden_layer_size[1], ..., 
-     output_layer_size].
+    [input_layer_size,
+     hidden_layer_size[0], hidden_layer_size[1], ...,
+     output_layer_size]
     """
     
     sizes = [input_layer_size]
@@ -389,14 +405,14 @@ if __name__ == "__main__":
     ACTIVATION_FUNC_DERIVATIVE = sigmoid_derivative
     INITIAL_WEIGHTS_FUNC = sigmoid_initial_weights
 
-    net = Network(sizes=network_sizes(INPUT_LAYER_SIZE,
-                                      OUTPUT_LAYER_SIZE,
-                                      HIDDEN_LAYER_SIZES),
-                  activation_func=ACTIVATION_FUNC,
-                  activation_func_derivative=ACTIVATION_FUNC_DERIVATIVE,
-                  initial_weights_func=INITIAL_WEIGHTS_FUNC,
-                  use_softmax=USE_SOFTMAX)
-    train_network(net, 
+    network = Network(sizes=network_sizes(INPUT_LAYER_SIZE,
+                                          OUTPUT_LAYER_SIZE,
+                                          HIDDEN_LAYER_SIZES),
+                      activation_func=ACTIVATION_FUNC,
+                      activation_func_derivative=ACTIVATION_FUNC_DERIVATIVE,
+                      initial_weights_func=INITIAL_WEIGHTS_FUNC,
+                      use_softmax=USE_SOFTMAX)
+    train_network(network,
                   training_data, 
                   n_epochs=EPOCH_COUNT,
                   batch_size=BATCH_SIZE,
