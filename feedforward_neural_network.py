@@ -12,7 +12,7 @@ import struct
     
 def read_image_and_label_data(image_archive_filename, 
                               label_archive_filename,
-                              max_pairs = None):
+                              max_pairs=None):
     """
     Reads image and label data. This returns a list of pairs "(x, y)" where
     "x" is a 785-dimensional vector (a "numpy.ndarray") representing
@@ -24,13 +24,14 @@ def read_image_and_label_data(image_archive_filename,
     (or all available pairs).
     """
     
-    with gzip.open(image_archive_filename) as img_file, gzip.open(label_archive_filename) as lab_file:
+    with gzip.open(image_archive_filename) as img_file, \
+            gzip.open(label_archive_filename) as lab_file:
         yield from ((vectorize_image(image), vectorize_label(label)) 
-            for image, label in zip(read_images(img_file, max_pairs), 
-                                    read_labels(lab_file, max_pairs)))
+                    for image, label in zip(read_images(img_file, max_pairs),
+                                            read_labels(lab_file, max_pairs)))
 
         
-def read_images(input, max_images = None):
+def read_images(input_stream, max_images=None):
     """
     Reads images from the input source. Returns a generator for those images.
 
@@ -38,21 +39,21 @@ def read_images(input, max_images = None):
     source. Otherwise reads max_images number of images (or all available images).
     """
     
-    magic = struct.unpack('>BBBB', input.read(4))
+    magic = struct.unpack('>BBBB', input_stream.read(4))
     assert magic[0] == 0 and magic[1] == 0 and magic[2] == 8 and magic[3] == 3
 
-    img_count = struct.unpack('>i', input.read(4))[0]
+    img_count = struct.unpack('>i', input_stream.read(4))[0]
     if max_images is not None and max_images >= 1:
         img_count = np.minimum(img_count, max_images)
 
-    row_count = struct.unpack('>i', input.read(4))[0]
-    col_count = struct.unpack('>i', input.read(4))[0]
+    row_count = struct.unpack('>i', input_stream.read(4))[0]
+    col_count = struct.unpack('>i', input_stream.read(4))[0]
     pixel_count = row_count * col_count
     for i in range(img_count):
-        yield struct.unpack('>%dB' % pixel_count, input.read(pixel_count))
+        yield struct.unpack('>%dB' % pixel_count, input_stream.read(pixel_count))
 
         
-def read_labels(input, max_labels = None):
+def read_labels(input_stream, max_labels=None):
     """
     Reads labels from the input source. Returns a generator for those labels.
 
@@ -60,15 +61,15 @@ def read_labels(input, max_labels = None):
     source. Otherwise reads max_labels number of labels (or all available labels).
     """
     
-    magic = struct.unpack('>BBBB', input.read(4))
+    magic = struct.unpack('>BBBB', input_stream.read(4))
     assert magic[0] == 0 and magic[1] == 0 and magic[2] == 8 and magic[3] == 1
 
-    label_count = struct.unpack('>i', input.read(4))[0]
+    label_count = struct.unpack('>i', input_stream.read(4))[0]
     if max_labels is not None and max_labels >= 1:
         label_count = np.minimum(label_count, max_labels)
 
     for i in range(label_count):
-        yield struct.unpack('>B', input.read(1))[0]
+        yield struct.unpack('>B', input_stream.read(1))[0]
         
 
 def vectorize_image(image):
@@ -81,7 +82,7 @@ def vectorize_image(image):
     values. Each greyscale value is normalized to the interval [0, 1].
     """
     
-    image = (255,) + image # First component will become 1.
+    image = (255,) + image  # First component will become 1.
     return np.reshape(np.array(image, dtype=float), (785, 1)) / 255
 
 
@@ -107,7 +108,7 @@ class Network(object):
                  activation_func, 
                  activation_func_derivative, 
                  initial_weights_func, 
-                 use_softmax = True):
+                 use_softmax=True):
         """
         Constructor.
         Create and initialize weights, setup structures for storing 
@@ -134,8 +135,7 @@ class Network(object):
         self.z = [np.zeros((s, 1)) if i > 0 else None 
                   for i, s in enumerate(self.sizes)]
         self.y = [np.zeros((s, 1)) for s in self.sizes]
-        
-            
+
     def feedforward(self, x):
         """
         TODO!
@@ -165,7 +165,6 @@ class Network(object):
         
         # Return the output layer values.
         return self.y[-1]
-    
 
     def update(self, batch, eta):
         """
@@ -190,7 +189,6 @@ class Network(object):
         for i in range(len(self.w)):
             self.w[i] = np.subtract(self.w[i], np.multiply(eta, sum_grad_w[i]))
 
-            
     def backpropagate(self, x, t):
         """
         TODO!
@@ -243,9 +241,9 @@ def sigmoid_initial_weights(n_out, n_in):
     function.    
     """
     
-    return np.random.uniform(low = -4 * np.sqrt(6.0 / (n_in + n_out)), 
-                             high = 4 * np.sqrt(6.0 / (n_in + n_out)), 
-                             size = (n_out, n_in))
+    return np.random.uniform(low=-4 * np.sqrt(6.0 / (n_in + n_out)),
+                             high=4 * np.sqrt(6.0 / (n_in + n_out)),
+                             size=(n_out, n_in))
   
     
 def tanh(z):
@@ -269,9 +267,9 @@ def tanh_initial_weights(n_out, n_in):
     """
     Initial weights for tanh activation function.
     """
-    return np.random.uniform(low = -np.sqrt(6.0 / (n_in + n_out)), 
-                             high = np.sqrt(6.0 / (n_in + n_out)), 
-                             size = (n_out, n_in))
+    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out)),
+                             high=np.sqrt(6.0 / (n_in + n_out)),
+                             size=(n_out, n_in))
 
 
 def relu(z):
@@ -279,20 +277,22 @@ def relu(z):
     z should be a column or row vector. 
     """
     return np.maximum(0.0, z)
-    
+
+
 def relu_derivative(z):
     """ 
     z should be a column or row vector. 
     """
     return np.where(z <= 0.0, 0.0, 1.0)    
 
+
 def relu_initial_weights(n_out, n_in):
     """
     TODO!
     """
-    return np.random.uniform(low = -np.sqrt(6.0 / (n_in + n_out)), 
-                             high = np.sqrt(6.0 / (n_in + n_out)), 
-                             size = (n_out, n_in))
+    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out)),
+                             high=np.sqrt(6.0 / (n_in + n_out)),
+                             size=(n_out, n_in))
     
 
 def train_network(network, data, n_epochs, batch_size, eta, error_rate_func=None):
@@ -321,9 +321,9 @@ def get_error_rate(network, test_data):
     """
     
     assert len(test_data) > 0
-    error_count = 0.0;
+    error_count = 0.0
     for image, label in test_data:    
-        y_hat = network.feedforward(image);
+        y_hat = network.feedforward(image)
         if np.argmax(y_hat, axis=0) != np.argmax(label, axis=0):
             error_count += 1.0
     
@@ -339,7 +339,7 @@ def network_sizes(input_layer_size, output_layer_size, hidden_layer_sizes):
     
     sizes = [input_layer_size]
     for hidden_layer_size in hidden_layer_sizes:
-        sizes.append(hidden_layer_size);    
+        sizes.append(hidden_layer_size)
     sizes.append(output_layer_size)  
     return sizes        
     
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     training_labels_archive_filename = "./data/train-labels-idx1-ubyte.gz"
     training_data = list(read_image_and_label_data(training_images_archive_filename, 
                                                    training_labels_archive_filename,
-                                                   max_pairs = TRAINING_COUNT))
+                                                   max_pairs=TRAINING_COUNT))
     print("Number of instances from training data: {0}".format(len(training_data)))
     
     TEST_COUNT = 5000
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     test_labels_archive_filename = "./data/t10k-labels-idx1-ubyte.gz"
     test_data = list(read_image_and_label_data(test_images_archive_filename, 
                                                test_labels_archive_filename,
-                                               max_pairs = TEST_COUNT))
+                                               max_pairs=TEST_COUNT))
     print("Number of instances from test data: {0}".format(len(test_data)))
 
     # Make sure we always use the same seed so that we can compare results 
@@ -383,18 +383,16 @@ if __name__ == "__main__":
     ACTIVATION_FUNC_DERIVATIVE = sigmoid_derivative
     INITIAL_WEIGHTS_FUNC = sigmoid_initial_weights
 
-    net = Network(sizes = network_sizes(INPUT_LAYER_SIZE, 
-                                        OUTPUT_LAYER_SIZE, 
-                                        HIDDEN_LAYER_SIZES), 
-                  activation_func = ACTIVATION_FUNC, 
-                  activation_func_derivative = ACTIVATION_FUNC_DERIVATIVE, 
-                  initial_weights_func = INITIAL_WEIGHTS_FUNC, 
-                  use_softmax = USE_SOFTMAX)
+    net = Network(sizes=network_sizes(INPUT_LAYER_SIZE,
+                                      OUTPUT_LAYER_SIZE,
+                                      HIDDEN_LAYER_SIZES),
+                  activation_func=ACTIVATION_FUNC,
+                  activation_func_derivative=ACTIVATION_FUNC_DERIVATIVE,
+                  initial_weights_func=INITIAL_WEIGHTS_FUNC,
+                  use_softmax=USE_SOFTMAX)
     train_network(net, 
                   training_data, 
-                  n_epochs = EPOCH_COUNT, 
-                  batch_size = BATCH_SIZE, 
-                  eta = LEARNING_RATE, 
+                  n_epochs=EPOCH_COUNT,
+                  batch_size=BATCH_SIZE,
+                  eta=LEARNING_RATE,
                   evaluate=lambda n: get_error_rate(n, test_data))    
-
-    
