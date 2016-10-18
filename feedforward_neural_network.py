@@ -12,7 +12,7 @@ import gzip
 import numpy as np
 import struct
 
-    
+
 def read_image_and_label_data(image_archive_filename, 
                               label_archive_filename,
                               max_pairs=None):
@@ -171,11 +171,10 @@ class Network(object):
             self.y[i + 1] = self.activation_func(self.z[i + 1])            
 
         # Output layer.    
-        # Only softmax or sigmoid activation functions make sense 
-        # for the output layer.
+        # Only softmax or sigmoid activation functions make sense for the output layer.
         self.z[-1] = np.dot(self.w[-1], self.y[-2])    
         if self.use_softmax:
-            self.y[-1] = np.divide(np.exp(self.z[-1]), np.sum(np.exp(self.z[-1])))
+            self.y[-1] = softmax(self.z[-1])
         else:
             self.y[-1] = np.divide(1.0, np.add(1.0, np.exp(np.multiply(-1.0, self.z))))
         
@@ -234,18 +233,26 @@ class Network(object):
         
         return grad
 
+
+def softmax(x):
+    """
+    x is a numpy.ndarray. Returns the softmax for each input element.
+    """
+    e_x = np.exp(x - x.max())
+    return e_x / e_x.sum()
+
         
 def sigmoid(z):
     """
-    z should be a column or row vector.
+    z is a numpy.ndarray. Returns the sigmoid function for each input element.
     """
 
-    return np.divide(1.0, np.add(1.0, np.exp(np.multiply(-1.0, z))))
+    return np.divide(1.0, np.add(1.0, np.exp(-z)))
     
     
 def sigmoid_derivative(z):
     """
-    z should be a column or row vector.
+    z is a numpy.ndarray. Returns the derivative of the sigmoid function for each input element.
     """
 
     s = sigmoid(z)
@@ -254,29 +261,27 @@ def sigmoid_derivative(z):
     
 def sigmoid_initial_weights(n_out, n_in):
     """
-    Initialize weights to be in the range suggested by Glorot and Bengio (2010) 
-    for sigmoid activation functions. This ensures that in early training each 
-    neuron operates on values that are in the non-flat areas of the sigmoid 
-    function.    
+    Initialize weights to be in the range suggested by [Xavier10] for sigmoid activation
+    functions. This ensures that in early training each neuron operates on values that are
+    in the non-flat areas of the sigmoid function.
     """
-    
-    return np.random.uniform(low=-4 * np.sqrt(6.0 / (n_in + n_out))[0],
-                             high=4 * np.sqrt(6.0 / (n_in + n_out))[0],
-                             size=(n_out, n_in))
-  
+
+    return 4.0 * tanh_initial_weights(n_out, n_in)
+
     
 def tanh(z):
     """ 
-    z should be a column or row vector. 
+    z is a numpy.ndarray. Returns the hyperbolic tangent function for each input element.
     """
     e_pos = np.exp(z)
-    e_neg = np.exp(np.multiply(-1.0, z))
+    e_neg = np.exp(-z)
     return np.divide(np.subtract(e_pos, e_neg), np.add(e_pos, e_neg))
     
     
 def tanh_derivative(z):
     """ 
-    z should be a column or row vector. 
+    z is a numpy.ndarray. Returns the derivative of the hyperbolic tangent function for each
+    input element.
     """
     f_z = tanh(z)
     return np.subtract(1.0, np.multiply(f_z, f_z))
@@ -284,35 +289,36 @@ def tanh_derivative(z):
     
 def tanh_initial_weights(n_out, n_in):
     """
-    Initial weights for tanh activation function.
+    Initialize weights to be in the range suggested by [Xavier10] for tanh activation
+    functions. This ensures that in early training each neuron operates on values that are
+    in the non-flat areas of the sigmoid function.
     """
-    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out))[0],
-                             high=np.sqrt(6.0 / (n_in + n_out))[0],
+    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out)),
+                             high=np.sqrt(6.0 / (n_in + n_out)),
                              size=(n_out, n_in))
 
 
 def relu(z):
     """ 
-    z should be a column or row vector. 
+    z is a numpy.ndarray. Returns the rectified linear unit function for each input element.
     """
     return np.maximum(0.0, z)
 
 
 def relu_derivative(z):
     """ 
-    z should be a column or row vector. 
+    z is a numpy.ndarray. Returns the derivative of the rectified linear unit function for each
+    input element.
     """
     return np.where(z <= 0.0, 0.0, 1.0)    
 
 
 def relu_initial_weights(n_out, n_in):
     """
-    TODO!
+    TODO: Not implemented!
     """
-    return np.random.uniform(low=-np.sqrt(6.0 / (n_in + n_out))[0],
-                             high=np.sqrt(6.0 / (n_in + n_out))[0],
-                             size=(n_out, n_in))
-    
+    assert False
+
 
 def train_network(net, data, epoch_count, batch_size, eta, error_rate_func=None):
     """
@@ -327,11 +333,11 @@ def train_network(net, data, epoch_count, batch_size, eta, error_rate_func=None)
         for k in range(0, n, batch_size):
             mini_batch = data[k:k+batch_size]
             net.update(mini_batch, eta)
-            print("\rEpoch %02d, %05d instances" % (e, k + batch_size), end="")
+            print("\rEpoch %02d, %05d instances" % (e + 1, k + batch_size), end="")
         print()
         if error_rate_func:
             error_rate = error_rate_func(net)
-            print("Epoch %02d, error rate = %.2f" % (e, error_rate * 100))
+            print("Epoch %02d, error rate = %.2f" % (e + 1, error_rate * 100))
             
     
 def get_error_rate(net, error_data):
@@ -371,10 +377,10 @@ if __name__ == "__main__":
     """
     Entry point.
     
-    Read data, train network, print error rate error.
+    Read data, train network, print error rate.
     """
-    
-    TRAINING_COUNT = 30000
+
+    TRAINING_COUNT = 0  # Use all training data.
     training_images_archive_filename = "./data/train-images-idx3-ubyte.gz"
     training_labels_archive_filename = "./data/train-labels-idx1-ubyte.gz"
     training_data = list(read_image_and_label_data(training_images_archive_filename, 
@@ -382,7 +388,7 @@ if __name__ == "__main__":
                                                    max_pairs=TRAINING_COUNT))
     print("Number of instances from training data: {0}".format(len(training_data)))
     
-    TEST_COUNT = 5000
+    TEST_COUNT = 0  # Use all test data.
     test_images_archive_filename = "./data/t10k-images-idx3-ubyte.gz"
     test_labels_archive_filename = "./data/t10k-labels-idx1-ubyte.gz"
     test_data = list(read_image_and_label_data(test_images_archive_filename, 
@@ -390,13 +396,12 @@ if __name__ == "__main__":
                                                max_pairs=TEST_COUNT))
     print("Number of instances from test data: {0}".format(len(test_data)))
 
-    # Make sure we always use the same seed so that we can compare results 
-    # between runs.
+    # Make sure we always use the same seed so that we can compare results  between runs.
     np.random.seed(1234)
     
     # Settings.
-    EPOCH_COUNT = 2
-    BATCH_SIZE = 10
+    EPOCH_COUNT = 5
+    BATCH_SIZE = 20
     LEARNING_RATE = 0.1
     INPUT_LAYER_SIZE = 785
     OUTPUT_LAYER_SIZE = 10
@@ -405,6 +410,17 @@ if __name__ == "__main__":
     ACTIVATION_FUNC = sigmoid
     ACTIVATION_FUNC_DERIVATIVE = sigmoid_derivative
     INITIAL_WEIGHTS_FUNC = sigmoid_initial_weights
+
+    #
+    # TODO: The tanh and relu activation function currently don't give any meaningful results
+    #       There are numerical issues somewhere, but I have not been able to track them down.
+    #
+    # ACTIVATION_FUNC = tanh
+    # ACTIVATION_FUNC_DERIVATIVE = tanh_derivative
+    # INITIAL_WEIGHTS_FUNC = tanh_initial_weights
+    # ACTIVATION_FUNC = relu
+    # ACTIVATION_FUNC_DERIVATIVE = relu_derivative
+    # INITIAL_WEIGHTS_FUNC = relu_initial_weights
 
     network = Network(sizes=network_sizes(INPUT_LAYER_SIZE,
                                           OUTPUT_LAYER_SIZE,
