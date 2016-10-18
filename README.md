@@ -31,5 +31,5 @@ The error rate is the generalization error, corresponding to the percentage of m
 A number of parameters can be changed, they are found in the settings section in the main function. Note that only sigmoid (logistic) activation functions are supported at the moment. Other parameters such as number of epochs and batch size may be changed freely.
 
 ## Future Work
-* Currently only the simple logistic function can be used as activation in the hidden layers. It would be nice if [ReLU](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)), and possibly the hyperbolic tangent function could be tested.
+* Currently only the simple logistic function can be used as activation in the hidden layers. It would be nice if [ReLU](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)), and possibly the hyperbolic tangent function, could be tested.
 * Implement a similar structure using the [Theano](https://github.com/Theano/Theano) library.
