@@ -26,6 +26,8 @@ Epoch 05, 60000 instances
 Epoch 05, error rate = 2.81
 ```
 
+The error rate is the generalization error, corresponding to the percentage of misclassified images in the training data set. In the output above, the network successfully classifies `100 - 2.81 = 97.19%` of the images.
+
 A number of parameters can be changed, they are found in the settings section in the main function. Note that only sigmoid (logistic) activation functions are supported at the moment. Other parameters such as number of epochs and batch size may be changed freely.
 
 ## Future Work
